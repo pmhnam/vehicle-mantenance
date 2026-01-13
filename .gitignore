@@ -22,3 +22,8 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+# Local DB Data
+postgres-data
+postgres-data-prod
+
