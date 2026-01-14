@@ -9,6 +9,7 @@ export const TELEGRAM_MESSAGES = {
 
 📌 <b>Các lệnh có sẵn:</b>
    ├─ /newvehicle - Tạo xe mới
+   ├─ /addconfig - Thêm cấu hình bảo dưỡng
    ├─ /status - Xem trạng thái
    ├─ /odo - Cập nhật ODO
    └─ /help - Xem hướng dẫn`,
@@ -22,6 +23,10 @@ Gửi biển số xe (VD: <code>59A1-12345</code>)
 <b>Tạo xe mới:</b>
 /newvehicle &lt;tên&gt; | &lt;biển số&gt;
 VD: <code>/newvehicle Airblade | 59A1-12345</code>
+
+<b>Thêm cấu hình bảo dưỡng:</b>
+/addconfig
+<i>Bot sẽ hướng dẫn từng bước.</i>
 
 <b>Cập nhật ODO:</b>
 /odo &lt;số km&gt;
@@ -48,6 +53,7 @@ VD: <code>/odo 5500</code>
   ERROR_UNKNOWN: '❌ <b>Lỗi:</b> Đã có lỗi xảy ra. Vui lòng thử lại.',
   ERROR_UPDATE_ODO: '❌ <b>Lỗi:</b> Không thể cập nhật ODO. Vui lòng thử lại.',
   ERROR_GET_STATUS: '❌ <b>Lỗi:</b> Không thể lấy trạng thái. Vui lòng thử lại.',
+  ERROR_INVALID_NUMBER: '❌ Vui lòng nhập số hợp lệ lớn hơn 0.',
   UNKNOWN_INPUT: '❓ <i>Không hiểu. Gửi</i> /help <i>để xem hướng dẫn.</i>',
 
   SUCCESS_LINK: (name: string, plate: string, odo: string) =>
@@ -85,11 +91,28 @@ VD: <code>/odo 5500</code>
   PROFILE_UPDATED: (name: string) => `✅ <b>Đã cập nhật loại xe:</b> ${name}\nLịch bảo dưỡng đã được áp dụng.`,
   PROFILE_NOT_FOUND: '❌ Loại xe không tồn tại.',
   LINK_PROFILE_ERROR_NO_VEHICLE: '❌ Bạn chưa liên kết với xe nào.',
+
+  // Add Config Flow
+  ADD_CONFIG_START:
+    '🛠 <b>Thêm cấu hình bảo dưỡng mới</b>\n\nNhập tên hạng mục bảo dưỡng:\n(VD: Thay nhớt máy, Kiểm tra phanh...)',
+  ADD_CONFIG_SELECT_TYPE: (name: string) => `🛠 <b>${name}</b>\n\nChọn loại bảo dưỡng:`,
+  ADD_CONFIG_ASK_KM: '🛠 <b>Chu kỳ theo Km?</b>\n\nNhập số km (VD: 2000).\nGửi "0" hoặc "boqua" nếu không có.',
+  ADD_CONFIG_ASK_MONTH: '🛠 <b>Chu kỳ theo Tháng?</b>\n\nNhập số tháng (VD: 6).\nGửi "0" hoặc "boqua" nếu không có.',
+  ADD_CONFIG_SUCCESS: (name: string) => `✅ <b>Đã thêm thành công!</b>\n\nCấu hình: <b>${name}</b> đã được lưu.`,
+  ADD_CONFIG_CANCEL: '❌ Đã hủy thêm cấu hình.',
+
+  // Delete Config Flow
+  DELETE_CONFIG_START: '🗑 <b>Xóa cấu hình bảo dưỡng</b>\n\nChọn cấu hình cần xóa:',
+  DELETE_CONFIG_EMPTY: 'ℹ️ Xe của bạn chưa có cấu hình riêng nào.',
+  DELETE_CONFIG_SUCCESS: (name: string) => `✅ <b>Đã xóa cấu hình:</b> ${name}`,
+  DELETE_CONFIG_CONFIRM: (name: string) => `❓ Bạn có chắc muốn xóa <b>${name}</b>?`,
 };
 
 export const TELEGRAM_REGEX = {
   LICENSE_PLATE: /^[\dA-Za-z][\dA-Za-z\s-]{4,15}$/,
   ACTION_SET_PROFILE: /SET_PROFILE:(.+)/,
+  ACTION_SET_CONFIG_TYPE: /SET_TYPE:(.+)/, // New regex for config type
+  ACTION_DELETE_CONFIG: /DEL_CFG:(.+)/,
   CMD_ODO: /\/odo\s+(\d+)/,
   CMD_NEW_VEHICLE: /\/newvehicle\s+(.+)\s*\|\s*(.+)/,
 };

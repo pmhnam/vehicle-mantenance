@@ -80,6 +80,31 @@ export class TelegramUpdate {
     }
   }
 
+  @Command('addconfig')
+  async onAddConfig(@Ctx() ctx: Context) {
+    const from = ctx.from;
+    if (!from) return;
+
+    const response = await this.telegramService.startAddConfig(from.id);
+    await ctx.reply(response, { parse_mode: 'HTML' });
+  }
+
+  @Command('deleteconfig')
+  async onDeleteConfigCommand(@Ctx() ctx: Context) {
+    const from = ctx.from;
+    if (!from) return;
+
+    const response = await this.telegramService.startDeleteConfig(from.id);
+    if (typeof response === 'string') {
+      await ctx.reply(response, { parse_mode: 'HTML' });
+    } else {
+      await ctx.reply(response.text, {
+        parse_mode: 'HTML',
+        reply_markup: response.reply_markup,
+      });
+    }
+  }
+
   @Action(TELEGRAM_REGEX.ACTION_SET_PROFILE)
   async onSetProfile(@Ctx() ctx: TelegramContext) {
     const from = ctx.from;
@@ -95,6 +120,38 @@ export class TelegramUpdate {
     await ctx.editMessageText(response, { parse_mode: 'HTML' });
   }
 
+  @Action(TELEGRAM_REGEX.ACTION_SET_CONFIG_TYPE)
+  async onSetConfigType(@Ctx() ctx: TelegramContext) {
+    const from = ctx.from;
+    if (!from || !ctx.match) return;
+
+    const typeCode = ctx.match[1];
+    const response = this.telegramService.handleConfigTypeSelection(from.id, typeCode);
+
+    await ctx.answerCbQuery();
+
+    // Send new message instead of editing to keep history clear or edit?
+    // User clicked button in previous message "Select Type". We want to ask "Enter Km".
+    // Editing the message replaces the buttons with next question. That's fine.
+    await ctx.editMessageText(response.text, {
+      parse_mode: 'HTML',
+      // If next step has buttons (not likely here, next is text input), we might needmarkup
+      // handleConfigTypeSelection returns ServiceResponse. But here next step is text prompt.
+    });
+  }
+
+  @Action(TELEGRAM_REGEX.ACTION_DELETE_CONFIG)
+  async onDeleteConfigAction(@Ctx() ctx: TelegramContext) {
+    const from = ctx.from;
+    if (!from || !ctx.match) return;
+
+    const configId = ctx.match[1];
+    const response = await this.telegramService.handleDeleteConfigSelection(from.id, configId);
+
+    await ctx.answerCbQuery();
+    await ctx.editMessageText(response, { parse_mode: 'HTML' });
+  }
+
   @On('text')
   async onText(@Ctx() ctx: Context, @Message('text') text: string) {
     const from = ctx.from;
@@ -102,6 +159,20 @@ export class TelegramUpdate {
 
     // Ignore commands (already handled)
     if (text.startsWith('/')) return;
+
+    // 1. Check if user is in an input flow (add config)
+    const configResponse = await this.telegramService.handleConfigInput(from.id, text.trim());
+    if (configResponse) {
+      if (configResponse.reply_markup) {
+        await ctx.reply(configResponse.text, {
+          parse_mode: 'HTML',
+          reply_markup: configResponse.reply_markup,
+        });
+      } else {
+        await ctx.reply(configResponse.text, { parse_mode: 'HTML' });
+      }
+      return;
+    }
 
     // Check if this looks like a license plate
     if (TELEGRAM_REGEX.LICENSE_PLATE.test(text.trim())) {
