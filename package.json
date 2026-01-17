@@ -18,13 +18,16 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/database/data-source.ts",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/database/config/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate src/database/migrations/$npm_config_name",
     "migration:run": "npm run typeorm -- migration:run",
-    "migration:prod": "typeorm -d dist/database/data-source.js migration:run",
+    "migration:run:prod": "node dist/database/scripts/migrate.js",
     "migration:revert": "npm run typeorm -- migration:revert",
-    "seed": "ts-node -r tsconfig-paths/register src/database/seed-cli.ts run",
-    "seed:reset": "ts-node -r tsconfig-paths/register src/database/seed-cli.ts reset"
+    "migration:revert:prod": "node dist/database/scripts/migrate.js --revert",
+    "seed": "ts-node -r tsconfig-paths/register src/database/scripts/seed.ts",
+    "seed:reset": "ts-node -r tsconfig-paths/register src/database/scripts/seed.ts --reset",
+    "seed:prod": "node dist/database/scripts/seed.js",
+    "seed:reset:prod": "node dist/database/scripts/seed.js --reset"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
