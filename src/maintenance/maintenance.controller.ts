@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Delete, Param, Body, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { MaintenanceService } from './maintenance.service';
 import { CreateConfigDto } from './dto/create-config.dto';
+import { UpdateConfigDto } from './dto/update-config.dto';
 import { LogMaintenanceDto } from './dto/log-maintenance.dto';
+import { CreateProfileDto } from './dto/create-profile.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Controller()
 export class MaintenanceController {
@@ -65,6 +68,19 @@ export class MaintenanceController {
     return this.maintenanceService.logMaintenance(dto);
   }
 
+  @Put('maintenance/config/:id')
+  @ApiTags('maintenance')
+  @ApiOperation({ summary: 'Update a maintenance config' })
+  @ApiParam({ name: 'id', description: 'Config UUID' })
+  @ApiResponse({ status: 200, description: 'Config updated successfully' })
+  @ApiResponse({ status: 404, description: 'Config not found' })
+  async updateConfig(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateConfigDto,
+  ) {
+    return this.maintenanceService.updateConfig(id, dto);
+  }
+
   @Delete('maintenance/config/:id')
   @ApiTags('maintenance')
   @ApiOperation({ summary: 'Delete a maintenance config' })
@@ -83,5 +99,62 @@ export class MaintenanceController {
   async deleteLog(@Param('id', ParseUUIDPipe) id: string) {
     await this.maintenanceService.deleteLog(id);
     return { message: 'Maintenance log deleted successfully' };
+  }
+
+  // Profile endpoints
+  @Get('profiles')
+  @ApiTags('profiles')
+  @ApiOperation({ summary: 'Get all maintenance profiles' })
+  @ApiResponse({ status: 200, description: 'List of maintenance profiles' })
+  async getProfiles() {
+    return this.maintenanceService.getAllProfiles();
+  }
+
+  @Get('profiles/:id/configs')
+  @ApiTags('profiles')
+  @ApiOperation({ summary: 'Get all maintenance configs for a profile' })
+  @ApiParam({ name: 'id', description: 'Profile UUID' })
+  @ApiResponse({ status: 200, description: 'List of maintenance configurations' })
+  async getConfigsByProfile(@Param('id', ParseUUIDPipe) profileId: string) {
+    return this.maintenanceService.getConfigsByProfileId(profileId);
+  }
+
+  @Get('profiles/:id')
+  @ApiTags('profiles')
+  @ApiOperation({ summary: 'Get a maintenance profile by ID' })
+  @ApiParam({ name: 'id', description: 'Profile UUID' })
+  @ApiResponse({ status: 200, description: 'The maintenance profile' })
+  @ApiResponse({ status: 404, description: 'Profile not found' })
+  async getProfileById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.maintenanceService.getProfileById(id);
+  }
+
+  @Post('profiles')
+  @ApiTags('profiles')
+  @ApiOperation({ summary: 'Create a new maintenance profile' })
+  @ApiResponse({ status: 201, description: 'Profile created successfully' })
+  async createProfile(@Body() dto: CreateProfileDto) {
+    return this.maintenanceService.createNewProfile(dto);
+  }
+
+  @Put('profiles/:id')
+  @ApiTags('profiles')
+  @ApiOperation({ summary: 'Update a maintenance profile' })
+  @ApiParam({ name: 'id', description: 'Profile UUID' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 404, description: 'Profile not found' })
+  async updateProfile(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProfileDto) {
+    return this.maintenanceService.updateProfile(id, dto);
+  }
+
+  @Delete('profiles/:id')
+  @ApiTags('profiles')
+  @ApiOperation({ summary: 'Delete a maintenance profile' })
+  @ApiParam({ name: 'id', description: 'Profile UUID' })
+  @ApiResponse({ status: 200, description: 'Profile deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Profile not found' })
+  async deleteProfile(@Param('id', ParseUUIDPipe) id: string) {
+    await this.maintenanceService.deleteProfile(id);
+    return { message: 'Maintenance profile deleted successfully' };
   }
 }

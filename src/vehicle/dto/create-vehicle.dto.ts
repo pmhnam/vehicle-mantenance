@@ -1,8 +1,8 @@
-import { IsString, IsNotEmpty, IsInt, Min, IsDateString, MaxLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsInt, Min, IsDateString, MaxLength, IsOptional, IsUUID } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IVehicle } from '../../common/interfaces/vehicle.interface';
 
-export class CreateVehicleDto implements Omit<IVehicle, 'purchaseDate' | 'profileId' | 'currentOdo'> {
+export class CreateVehicleDto implements Omit<IVehicle, 'purchaseDate' | 'currentOdo'> {
   @ApiProperty({ example: 'Honda Airblade 2024', description: 'Vehicle name' })
   @IsString()
   @IsNotEmpty()
@@ -23,4 +23,9 @@ export class CreateVehicleDto implements Omit<IVehicle, 'purchaseDate' | 'profil
   @ApiProperty({ example: '2024-01-15', description: 'Purchase date (YYYY-MM-DD)' })
   @IsDateString()
   purchaseDate: string;
+
+  @ApiPropertyOptional({ description: 'Maintenance profile UUID' })
+  @IsOptional()
+  @IsUUID()
+  profileId?: string;
 }

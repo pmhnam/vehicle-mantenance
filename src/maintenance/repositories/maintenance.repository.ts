@@ -19,6 +19,10 @@ export class MaintenanceRepository implements IMaintenanceRepository {
   ) {}
 
   // Profile operations
+  async findProfileById(id: string): Promise<MaintenanceProfile | null> {
+    return this.profileRepo.findOne({ where: { id } });
+  }
+
   async findProfileByCode(code: string): Promise<MaintenanceProfile | null> {
     return this.profileRepo.findOne({ where: { code } });
   }
@@ -30,6 +34,18 @@ export class MaintenanceRepository implements IMaintenanceRepository {
   async createProfile(profile: Partial<MaintenanceProfile>): Promise<MaintenanceProfile> {
     const entity = this.profileRepo.create(profile);
     return this.profileRepo.save(entity);
+  }
+
+  async updateProfile(id: string, profile: Partial<MaintenanceProfile>): Promise<MaintenanceProfile | null> {
+    const existing = await this.profileRepo.findOne({ where: { id } });
+    if (!existing) return null;
+    Object.assign(existing, profile);
+    return this.profileRepo.save(existing);
+  }
+
+  async deleteProfile(id: string): Promise<boolean> {
+    const result = await this.profileRepo.delete(id);
+    return (result.affected ?? 0) > 0;
   }
 
   // Config operations
@@ -51,9 +67,23 @@ export class MaintenanceRepository implements IMaintenanceRepository {
       .getMany();
   }
 
+  async findConfigsByProfileId(profileId: string): Promise<MaintenanceConfig[]> {
+    return this.configRepo.find({
+      where: { profileId },
+      order: { itemName: 'ASC' },
+    });
+  }
+
   async createConfig(config: Partial<MaintenanceConfig>): Promise<MaintenanceConfig> {
     const entity = this.configRepo.create(config);
     return this.configRepo.save(entity);
+  }
+
+  async updateConfig(id: string, config: Partial<MaintenanceConfig>): Promise<MaintenanceConfig | null> {
+    const existing = await this.configRepo.findOne({ where: { id } });
+    if (!existing) return null;
+    Object.assign(existing, config);
+    return this.configRepo.save(existing);
   }
 
   async deleteConfig(id: string): Promise<boolean> {

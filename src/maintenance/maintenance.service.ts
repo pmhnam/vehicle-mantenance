@@ -10,6 +10,7 @@ import { MaintenanceConfig } from './entities/maintenance-config.entity';
 import { HONDA_AIRBLADE_HCM_CONFIGS } from './domain/maintenance.constants';
 import { MaintenanceLog } from './entities/maintenance-log.entity';
 import { MaintenanceProfile } from './entities/maintenance-profile.entity';
+import { MaintenanceType } from './domain/maintenance-type.enum';
 
 @Injectable()
 export class MaintenanceService {
@@ -63,23 +64,16 @@ export class MaintenanceService {
    * Create a new maintenance configuration
    */
   async createConfig(dto: CreateConfigDto): Promise<MaintenanceConfig> {
-    // Validate vehicle exists and get profile
-    const vehicle = await this.vehicleService.findById(dto.vehicleId);
-
-    // If vehicle has no profile? Current logic requires profile for config.
-    // We should probably ensure vehicle has a profile, or creating config fails.
-    // For now, assume profileId exists or we need to handle it.
-    // Since we refactored, vehicle.profileId should be available if loaded.
-    // Update findById to load profile? Or use profileId column.
-
-    // Actually, vehicle entity has profileId column now.
-    if (!vehicle.profileId) {
-      throw new NotFoundException('Vehicle does not have a maintenance profile assigned');
+    // Validate profile exists
+    const profile = await this.maintenanceRepository.findProfileById(dto.profileId);
+    if (!profile) {
+      throw new NotFoundException(`Profile with ID ${dto.profileId} not found`);
     }
 
     return this.maintenanceRepository.createConfig({
-      profileId: vehicle.profileId,
+      profileId: dto.profileId,
       itemName: dto.itemName,
+      maintenanceType: dto.maintenanceType,
       intervalKm: dto.intervalKm ?? null,
       intervalMonths: dto.intervalMonths ?? null,
     });
@@ -91,6 +85,36 @@ export class MaintenanceService {
   async getConfigsByVehicleId(vehicleId: string): Promise<MaintenanceConfig[]> {
     await this.vehicleService.findById(vehicleId);
     return this.maintenanceRepository.findConfigsByVehicleId(vehicleId);
+  }
+
+  /**
+   * Get all configs for a profile
+   */
+  async getConfigsByProfileId(profileId: string): Promise<MaintenanceConfig[]> {
+    const profile = await this.maintenanceRepository.findProfileById(profileId);
+    if (!profile) {
+      throw new NotFoundException(`Profile with ID ${profileId} not found`);
+    }
+    return this.maintenanceRepository.findConfigsByProfileId(profileId);
+  }
+
+  /**
+   * Update a maintenance configuration
+   */
+  async updateConfig(
+    id: string,
+    data: { itemName?: string; maintenanceType?: MaintenanceType; intervalKm?: number; intervalMonths?: number },
+  ): Promise<MaintenanceConfig> {
+    const updated = await this.maintenanceRepository.updateConfig(id, {
+      ...(data.itemName && { itemName: data.itemName }),
+      ...(data.maintenanceType && { maintenanceType: data.maintenanceType }),
+      ...(data.intervalKm !== undefined && { intervalKm: data.intervalKm }),
+      ...(data.intervalMonths !== undefined && { intervalMonths: data.intervalMonths }),
+    });
+    if (!updated) {
+      throw new NotFoundException(`Maintenance config with ID ${id} not found`);
+    }
+    return updated;
   }
 
   /**
@@ -212,7 +236,57 @@ export class MaintenanceService {
     return this.maintenanceRepository.findAllProfiles();
   }
 
+  async getProfileById(id: string): Promise<MaintenanceProfile> {
+    const profile = await this.maintenanceRepository.findProfileById(id);
+    if (!profile) {
+      throw new NotFoundException(`Profile with ID ${id} not found`);
+    }
+    return profile;
+  }
+
   async getProfileByCode(code: string): Promise<MaintenanceProfile | null> {
     return this.maintenanceRepository.findProfileByCode(code);
+  }
+
+  async createNewProfile(data: { name: string; code: string; description?: string }): Promise<MaintenanceProfile> {
+    // Check if code already exists
+    const existing = await this.maintenanceRepository.findProfileByCode(data.code);
+    if (existing) {
+      throw new Error(`Profile with code ${data.code} already exists`);
+    }
+    return this.maintenanceRepository.createProfile({
+      name: data.name,
+      code: data.code,
+      description: data.description,
+    });
+  }
+
+  async updateProfile(
+    id: string,
+    data: { name?: string; code?: string; description?: string },
+  ): Promise<MaintenanceProfile> {
+    // Check if code already exists for another profile
+    if (data.code) {
+      const existing = await this.maintenanceRepository.findProfileByCode(data.code);
+      if (existing && existing.id !== id) {
+        throw new Error(`Profile with code ${data.code} already exists`);
+      }
+    }
+    const updated = await this.maintenanceRepository.updateProfile(id, {
+      ...(data.name && { name: data.name }),
+      ...(data.code && { code: data.code }),
+      ...(data.description !== undefined && { description: data.description }),
+    });
+    if (!updated) {
+      throw new NotFoundException(`Profile with ID ${id} not found`);
+    }
+    return updated;
+  }
+
+  async deleteProfile(id: string): Promise<void> {
+    const deleted = await this.maintenanceRepository.deleteProfile(id);
+    if (!deleted) {
+      throw new NotFoundException(`Profile with ID ${id} not found`);
+    }
   }
 }

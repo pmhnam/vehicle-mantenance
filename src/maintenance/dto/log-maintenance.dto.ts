@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   Min,
+  Max,
   MaxLength,
   IsUUID,
   IsDateString,
@@ -44,6 +45,7 @@ export class LogMaintenanceDto implements Omit<IMaintenanceLog, 'performedAtDate
   @ApiPropertyOptional({ example: 150000, description: 'Cost in VND' })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
+  @Max(99999999.99)
   @IsOptional()
   cost?: number;
 

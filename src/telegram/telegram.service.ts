@@ -296,8 +296,14 @@ export class TelegramService {
           const user = await this.telegramUserRepo.findOne({ where: { telegramId } });
           // We checked user presence at start, but check again safely
           if (user && user.vehicleId) {
+            // Get vehicle to retrieve profileId
+            const vehicle = await this.vehicleService.findById(user.vehicleId);
+            if (!vehicle.profileId) {
+              return { text: 'Xe chưa được gán profile bảo dưỡng. Vui lòng chọn profile trước.' };
+            }
+
             await this.maintenanceService.createConfig({
-              vehicleId: user.vehicleId,
+              profileId: vehicle.profileId,
               itemName: state.itemName!, // Safe bang (we set it in step 1)
               maintenanceType: state.maintenanceType as MaintenanceType,
               intervalKm: state.intervalKm === 0 ? undefined : state.intervalKm,

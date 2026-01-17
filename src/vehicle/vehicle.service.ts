@@ -31,6 +31,7 @@ export class VehicleService {
       initialOdo: dto.initialOdo,
       currentOdo: dto.initialOdo,
       purchaseDate: new Date(dto.purchaseDate),
+      profileId: dto.profileId,
     });
   }
 
