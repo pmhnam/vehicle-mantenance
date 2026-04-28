@@ -18,8 +18,10 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - app_network
-      - shared_backend_net
+      app_network:
+      shared_backend_net:
+        aliases:
+          - vehicle-be-api
     # deploy:
     #   resources:
     #     limits:
