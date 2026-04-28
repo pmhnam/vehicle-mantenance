@@ -1,0 +1,118 @@
+name: Deploy Backend to VPS
+
+on:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: gadola/vehicle-mantenance-app
+  DEPLOY_DIR: ~/vehicle-be
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:latest
+          cache-to: type=inline
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST_IP }}
+          username: ${{ secrets.HOST_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.prod.yml"
+          target: ${{ env.DEPLOY_DIR }}
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DOCKER_IMAGE_NAME: ${{ env.DOCKER_IMAGE }}:latest
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          PORT: ${{ secrets.APP_PORT }}
+          TELEGRAM_ENABLED: ${{ secrets.TELEGRAM_ENABLED }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        with:
+          host: ${{ secrets.HOST_IP }}
+          username: ${{ secrets.HOST_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DOCKER_IMAGE_NAME,DB_USERNAME,DB_PASSWORD,DB_DATABASE,PORT,TELEGRAM_ENABLED,TELEGRAM_BOT_TOKEN
+          script: |
+            set -e
+            mkdir -p ~/vehicle-be
+            cd ~/vehicle-be
+
+            # Write/refresh .env (idempotent)
+            cat > .env <<EOF
+            NODE_ENV=production
+            PORT=${PORT:-3000}
+            DB_HOST=postgres
+            DB_PORT=5432
+            DB_USERNAME=${DB_USERNAME}
+            DB_PASSWORD=${DB_PASSWORD}
+            DB_DATABASE=${DB_DATABASE}
+            DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME}
+            TELEGRAM_ENABLED=${TELEGRAM_ENABLED:-false}
+            TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+            EOF
+
+            # Pull the latest image
+            docker compose -f docker-compose.prod.yml pull
+
+            # Restart containers with new image
+            docker compose -f docker-compose.prod.yml up -d
+
+            # Wait for postgres to be healthy, then run migrations
+            echo "Waiting for postgres to be ready..."
+            for i in {1..30}; do
+              if docker compose -f docker-compose.prod.yml exec -T postgres pg_isready -U "${DB_USERNAME}" -d "${DB_DATABASE}" > /dev/null 2>&1; then
+                echo "Postgres is ready"
+                break
+              fi
+              sleep 2
+            done
+
+            # Run migrations
+            docker compose -f docker-compose.prod.yml exec -T app npm run migration:run:prod || echo "Migration step skipped or failed (non-fatal)"
+
+            # Cleanup unused images
+            docker system prune -f
