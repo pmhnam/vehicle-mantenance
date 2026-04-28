@@ -1,8 +1,11 @@
-# Nestjs specific
-/dist
+# Dependencies
 /node_modules
 /build
+
+# Build output
+/dist
 /tmp
+*.tsbuildinfo
 
 # Logs
 logs
@@ -15,11 +18,25 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env
+.env.local
 .env.development
+.env.development.local
 .env.test
+.env.test.local
 .env.production
+.env.production.local
+!.env.example
 
-# temp directory
+# Test / coverage
+/coverage
+.nyc_output
+
+# Caches
+.eslintcache
+.cache
+.parcel-cache
+
+# Temp
 .temp
 .tmp
 
@@ -27,3 +44,25 @@ lerna-debug.log*
 postgres-data
 postgres-data-prod
 
+# IDE / Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Devin / agent metadata
+.agent/
+.devin/

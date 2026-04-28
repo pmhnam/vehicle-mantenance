@@ -42,6 +42,7 @@ export class VehicleService {
     if (dto.licensePlate !== undefined) updateData.licensePlate = dto.licensePlate;
     if (dto.currentOdo !== undefined) updateData.currentOdo = dto.currentOdo;
     if (dto.purchaseDate !== undefined) updateData.purchaseDate = new Date(dto.purchaseDate);
+    if (dto.profileId !== undefined) updateData.profileId = dto.profileId;
 
     const vehicle = await this.vehicleRepository.update(id, updateData);
     if (!vehicle) {

@@ -1,9 +1,19 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
+import { join } from 'path';
 
 config();
 
-const isProduction = process.env.NODE_ENV === 'production';
+// Auto-detect runtime: when this file is loaded as .js it lives under dist/,
+// when loaded as .ts (ts-node) it lives under src/. Resolve entity/migration
+// globs relative to this file so the script works in both modes without
+// requiring NODE_ENV to be set.
+const isCompiled = __filename.endsWith('.js');
+const ext = isCompiled ? 'js' : 'ts';
+
+// data-source.(ts|js) lives at <root>/(src|dist)/database/config/, so go up
+// 3 levels to reach the source/dist root.
+const rootDir = join(__dirname, '..', '..', '..');
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -12,8 +22,8 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_DATABASE || 'vehicle_maintenance',
-  entities: [isProduction ? 'dist/**/*.entity.js' : 'src/**/*.entity.ts'],
-  migrations: [isProduction ? 'dist/database/migrations/*.js' : 'src/database/migrations/*.ts'],
+  entities: [join(rootDir, `**/*.entity.${ext}`)],
+  migrations: [join(rootDir, `database/migrations/*.${ext}`)],
   synchronize: false,
   logging: process.env.DB_LOGGING === 'true',
 };

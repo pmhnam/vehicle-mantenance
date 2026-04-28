@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, Min, IsDateString, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, IsDateString, MaxLength, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IVehicle } from '../../common/interfaces/vehicle.interface';
 
@@ -28,4 +28,9 @@ export class UpdateVehicleDto implements Partial<Omit<IVehicle, 'purchaseDate'>>
   @IsDateString()
   @IsOptional()
   purchaseDate?: string;
+
+  @ApiPropertyOptional({ description: 'Maintenance profile UUID' })
+  @IsOptional()
+  @IsUUID()
+  profileId?: string;
 }

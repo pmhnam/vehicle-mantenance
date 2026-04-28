@@ -25,7 +25,7 @@ import { DatabaseModule } from './database/database.module';
     }),
     VehicleModule,
     MaintenanceModule,
-    TelegramModule,
+    TelegramModule.forRoot(),
     DatabaseModule,
   ],
   controllers: [AppController],

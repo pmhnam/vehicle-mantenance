@@ -190,13 +190,6 @@ export class MaintenanceService {
         description: 'Lịch bảo dưỡng cho điều kiện khắc nghiệt tại TP.HCM (Auto-created)',
       });
 
-      // Create profile and configs dynamically if not exists (Lazy seeding)
-      profile = await this.maintenanceRepository.createProfile({
-        code: profileCode,
-        name: 'Honda Airblade (HCM - Severe)',
-        description: 'Lịch bảo dưỡng cho điều kiện khắc nghiệt tại TP.HCM (Auto-created)',
-      });
-
       // Use static import instead of dynamic
       for (const data of HONDA_AIRBLADE_HCM_CONFIGS) {
         await this.maintenanceRepository.createConfig({
